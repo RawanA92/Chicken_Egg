@@ -1,5 +1,3 @@
-package assets;
-
 import javax.media.opengl.GL;
 
 public class Falling_Egg2 extends level1 {

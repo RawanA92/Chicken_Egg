@@ -1,5 +1,3 @@
-package assets;
-
 import javax.media.opengl.GLEventListener;
 import java.awt.event.KeyListener;
 

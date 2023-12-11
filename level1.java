@@ -1,5 +1,3 @@
-package assets;
-
 import com.sun.opengl.util.j2d.TextRenderer;
 
 import javax.media.opengl.GL;
@@ -14,15 +12,22 @@ import java.util.List;
 
 
 public class level1 extends AnimListener_egg {
-    List<assets.Falling_Egg> fallingEggs = new ArrayList<>();
 
-    private assets.Falling_Egg fallingEgg;
+    int lost_time = 0 ;
+    List<Falling_Egg> fallingEggs = new ArrayList<>();
+
+    private Falling_Egg fallingEgg;
 
     int animationIndex = 0;
     int maxWidth = 100;
     int maxHeight = 100;
-    int x = maxWidth/2, y = maxHeight/2;
+    int x = maxWidth / 2, y = maxHeight / 2;
     int frameCount = 0;
+    int lives = 3;
+    int score = 0;
+
+
+
 
     TextRenderer textRenderer = new TextRenderer(new Font("SansSerif", Font.PLAIN, 24));
 
@@ -62,15 +67,14 @@ public class level1 extends AnimListener_egg {
         gl.glBlendFunc(GL.GL_SRC_ALPHA, GL.GL_ONE_MINUS_SRC_ALPHA);
         gl.glGenTextures(textureNames.length, textures, 0);
 
-        fallingEggs.add(new assets.Falling_Egg(15, 14 * 6, 8, 1.5f));
-        fallingEggs.add(new assets.Falling_Egg(15 * 5, 14 * 6, 8, 1.5f));
-        fallingEggs.add(new assets.Falling_Egg(15 * 3, 14 * 6, 8, 1.5f));
+        fallingEggs.add(new Falling_Egg(15, 14 * 6, 8, 1.5f));
+        fallingEggs.add(new Falling_Egg(15 * 5, 14 * 6, 8, 1.5f));
+        fallingEggs.add(new Falling_Egg(15 * 3, 14 * 6, 8, 1.5f));
 
 
-
-        for(int i = 0; i < textureNames.length; i++){
+        for (int i = 0; i < textureNames.length; i++) {
             try {
-                texture[i] = TextureReader_egg.readTexture(assetsFolderName + "//" + textureNames[i] , true);
+                texture[i] = TextureReader_egg.readTexture(assetsFolderName + "//" + textureNames[i], true);
                 gl.glBindTexture(GL.GL_TEXTURE_2D, textures[i]);
 
 //                mipmapsFromPNG(gl, new GLU(), texture[i]);
@@ -82,44 +86,45 @@ public class level1 extends AnimListener_egg {
                         GL.GL_UNSIGNED_BYTE,
                         texture[i].getPixels() // Imagedata
                 );
-            } catch( IOException e ) {
+            } catch (IOException e) {
                 System.out.println(e);
                 e.printStackTrace();
             }
         }
         // Create instances of FallingEgg and add them to the list (initially inactive)
         for (int i = 0; i < 30; i++) {
-            fallingEggs.add(new assets.Falling_Egg(-100, -100, 0, 0)); // Initialize eggs outside the visible area
+            fallingEggs.add(new Falling_Egg(-100, -100, 0, 0)); // Initialize eggs outside the visible area
         }
     }
 
-   private void activateEggsForChicken() {
-       // Set the corresponding egg as active
-       for (assets.Falling_Egg egg : fallingEggs) {
-           if (!egg.isActive()) {
-               egg.setActive(true);
-               int randomIndex = (int) (Math.random() * 3);  // Generates a random index (0, 1, or 2)
-               float randomX = 2* 15 * (randomIndex +1);
-               egg.setY(14 * 6);  // Initial Y position for the chicken
-               //egg.setX((float) Math.random() * (maxWidth - 10)); // Randomize the X position
-               egg.setX(randomX); // Randomized X position based on the selected index
+    private void activateEggsForChicken() {
+        // Set the corresponding egg as active
+        for (Falling_Egg egg : fallingEggs) {
+            if (!egg.isActive()) {
+                egg.setActive(true);
+                int randomIndex = (int) (Math.random() * 3);  // Generates a random index (0, 1, or 2)
+                float randomX = 2 * 15 * (randomIndex + 1);
+                egg.setY(14 * 6);  // Initial Y position for the chicken
+                //egg.setX((float) Math.random() * (maxWidth - 10)); // Randomize the X position
+                egg.setX(randomX); // Randomized X position based on the selected index
 
-               //egg.setX(15 * 3);
-               break; // Activate only one egg at a time
-           }
-       }
-   }
-
+                //egg.setX(15 * 3);
+                break; // Activate only one egg at a time
+            }
+        }
+    }
 
 
     public void display(GLAutoDrawable gld) {
+        boolean lost = false ;
+
 
         GL gl = gld.getGL();
         gl.glClear(GL.GL_COLOR_BUFFER_BIT);       //Clear The Screen And The Depth Buffer
 
         gl.glLoadIdentity();
 
-
+        if (lives != 0) {
             DrawBackground(gl);
             handleKeyPress();
             animationIndex = animationIndex % 6;
@@ -130,32 +135,38 @@ public class level1 extends AnimListener_egg {
             float boxX = x + 5; // Adjust the box's X coordinate based on the man's position
             float boxY = 5.5f;
 
-            if (frameCount % 50 == 0 && frameCount < 1500) { // Activate eggs for the first 30 frames
+            if (frameCount  % 30 == 0 && frameCount < 1500) { // Activate eggs for the first 30 frames
                 activateEggsForChicken();
             }
 
             // Update and draw falling eggs
-            for (assets.Falling_Egg egg : fallingEggs) {
+            for (Falling_Egg egg : fallingEggs) {
                 if (egg.isActive()) {
-                    if (checkCollision(egg.getX(), egg.getY(), 1.0f, 1.0f,  x+1, 5.5f, x, 1.5f)) {
+                    if (checkCollision(egg.getX(), egg.getY(), 1.0f, 1.0f, x + 1, 5.5f, x, 1.5f)) {
                         egg.setActive(false);
-
+                        score++;
                     } else {
                         egg.fall();
                         DrawSprite(gl, egg.getX(), egg.getY(), 10, 0.5f);
 
                         if (egg.getY() < -1.0f) {
                             egg.setActive(false);
+                            score--;
                         }
 
                         if (egg.getY() == boxX && egg.getY() == boxY) {
                             egg.setActive(false);
+                            score++;
                         }
                     }
                 }
             }
 
-
+// Adjust the condition for decrementing lives
+            if (score < 0) {
+                lives--;
+                score = 0; // Reset the score to prevent continuous decrement
+            }
 
 
             // Increment the frame count
@@ -165,8 +176,37 @@ public class level1 extends AnimListener_egg {
             DrawSprite(gl, 15 * 3, 14 * 6, 8, 1.5f);
             DrawSprite(gl, 15 * 5, 14 * 6, 8, 1.5f);
 
+            textRenderer.beginRendering(gld.getWidth(), gld.getHeight());
+            textRenderer.draw("Score: " + score, 10, 10); // Adjust the coordinates as needed
+            textRenderer.endRendering();
 
+            if (score == -1) {
+                lives--;
+            }
+//            System.out.println(lives);
+
+            for (int i = 0; i < lives; i++) {
+                DrawSprite(gl, 15 * 0, 14 * 6, textureNames.length - 3, 0.5f);
+            }
+            for (int i = 1; i < lives; i++) {
+                DrawSprite(gl, 15 * 0.2f, 14 * 6, textureNames.length - 3, 0.5f);
+            }
+            for (int i = 2; i < lives; i++) {
+                DrawSprite(gl, 15 * 0.4f, 14 * 6, textureNames.length - 3, 0.5f);
+            }
+
+        } else {
+            DrawBackground2(gl);
+            musics.main_music.stopMusic();
+            lost = true ;
+            lost_time ++ ;
+            if ((lost_time < 2) ) {
+                musics.game_over.playMusic();
+                lost_time++;
+            }
+        }
     }
+
     private boolean checkCollision(float x1, float y1, float w1, float h1, float x2, float y2, float w2, float h2) {
         return x1 < x2 + w2 &&
                 x1 + w1 > x2 &&
@@ -180,13 +220,13 @@ public class level1 extends AnimListener_egg {
     public void displayChanged(GLAutoDrawable drawable, boolean modeChanged, boolean deviceChanged) {
     }
 
-    public void DrawSprite(GL gl,float x, float y, int index, float scale){
+    public void DrawSprite(GL gl, float x, float y, int index, float scale) {
         gl.glEnable(GL.GL_BLEND);
-        gl.glBindTexture(GL.GL_TEXTURE_2D, textures[index]);	// Turn Blending On
+        gl.glBindTexture(GL.GL_TEXTURE_2D, textures[index]);    // Turn Blending On
 
         gl.glPushMatrix();
-        gl.glTranslated( x/(maxWidth/2.0) - 0.9, y/(maxHeight/2.0) - 0.9, 0);
-        gl.glScaled(0.1*scale, 0.1*scale, 1);
+        gl.glTranslated(x / (maxWidth / 2.0) - 0.9, y / (maxHeight / 2.0) - 0.9, 0);
+        gl.glScaled(0.1 * scale, 0.1 * scale, 1);
         //System.out.println(x +" " + y);
         gl.glBegin(GL.GL_QUADS);
         // Front Face
@@ -204,9 +244,9 @@ public class level1 extends AnimListener_egg {
         gl.glDisable(GL.GL_BLEND);
     }
 
-    public void DrawBackground(GL gl){
+    public void DrawBackground(GL gl) {
         gl.glEnable(GL.GL_BLEND);
-        gl.glBindTexture(GL.GL_TEXTURE_2D, textures[textures.length-1]);	// Turn Blending On
+        gl.glBindTexture(GL.GL_TEXTURE_2D, textures[textures.length - 1]);    // Turn Blending On
 
         gl.glPushMatrix();
         gl.glBegin(GL.GL_QUADS);
@@ -225,9 +265,9 @@ public class level1 extends AnimListener_egg {
         gl.glDisable(GL.GL_BLEND);
     }
 
-    public void DrawBackground2(GL gl){
+    public void DrawBackground2(GL gl) {
         gl.glEnable(GL.GL_BLEND);
-        gl.glBindTexture(GL.GL_TEXTURE_2D, textures[textures.length-2]);
+        gl.glBindTexture(GL.GL_TEXTURE_2D, textures[textures.length - 2]);    // Turn Blending On
 
         gl.glPushMatrix();
         gl.glBegin(GL.GL_QUADS);
@@ -259,7 +299,7 @@ public class level1 extends AnimListener_egg {
             animationIndex++;
         }
         if (isKeyPressed(KeyEvent.VK_RIGHT)) {
-            if (x < maxWidth-10) {
+            if (x < maxWidth - 10) {
                 x++;
             }
             animationIndex++;
@@ -276,6 +316,9 @@ public class level1 extends AnimListener_egg {
             }
             animationIndex++;
         }*/
+        if (isKeyPressed(KeyEvent.VK_B)) {
+            musics.main_music.stopMusic();
+        }
 
     }
 
@@ -301,7 +344,11 @@ public class level1 extends AnimListener_egg {
     public boolean isKeyPressed(final int keyCode) {
         return keyBits.get(keyCode);
     }
+    public void  playMusic(int i){
 
+    }
 
-
+    public void stopMusic(){ }
 }
+
+
